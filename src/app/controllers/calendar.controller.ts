@@ -38,6 +38,8 @@ export class CalendarController {
 		const lines = input.split( '\n' );
 		const result: IBookingRequestExtended[] = [];
 
+		// TODO: check the `input` format, should include suitable count of lines, should
+
 		// skip the first line, which represents the office working hours, so that i=1 not 0
 		for ( let i = 1; i < ( lines.length - 1 ); i += 2 ) {
 			const line1 = lines[ i ].trim().split( ' ' );

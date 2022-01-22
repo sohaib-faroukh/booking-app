@@ -15,8 +15,6 @@ export interface IBookingRequestExtended extends IBookingRequest {
 	submissionTimeMoment: MyDateTimeType;
 	startTimeMoment: MyDateTimeType;
 	endTimeMoment: MyDateTimeType;
-	overlaps: string[];
-
 }
 
 export interface IBookingByDay {
