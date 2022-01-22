@@ -20,19 +20,32 @@ the application provide a REST api endpoint as a GET method, you can use it as t
 - method: GET 
 - url: `http://<host>:<port>/v1/api/calendar?input=<your_formartted_input>` 
 - query string params
-		- input: string includes your input
+		- input: string includes your input, format:
+
+```
+0900 1730
+2011-03-17 10:17:06 EMP001
+2011-03-21 09:00 2
+2011-03-16 12:34:56 EMP002
+2011-03-21 09:00 2
+2011-03-16 09:28:23 EMP003
+2011-03-22 14:00 2
+2011-03-17 10:17:06 EMP004
+2011-03-22 16:00 1
+2011-03-15 17:29:12 EMP005
+2011-03-21 16:00 3
+```
+
 - output: json object include a string of the exected output as the following:
-	```
-		{
 
-		"code":  200,
+```
+2011-03-21
+09:00 11:00 EMP002
+2011-03-22
+14:00 16:00 EMP003
+16:00 17:00 EMP004
+```
 
-		"message":  "success",
-
-		"data":  "2011-03-21\n09:00 11:00 EMP002\n2011-03-22\n14:00 16:00 EMP003\n16:00 17:00 EMP004"
-
-		}
-		```
 
 ### Test
 - please run `npm run test` to run all the prepared test cases
