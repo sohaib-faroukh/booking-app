@@ -10,6 +10,7 @@ import { uuid } from '../utils/uuid.util';
 export class CalendarController {
 
 	private static readonly FORMAT = 'YYYY-MM-DD HH:mm';
+	private static readonly SUBMISSION_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 	private static readonly DAY_FORMAT = 'YYYY-MM-DD';
 	private static readonly TIME_FORMAT = 'HH:mm';
 	private static readonly INPUT_TIME_FORMAT = 'HHmm';
@@ -30,7 +31,9 @@ export class CalendarController {
 
 
 	/**
-	 * decompose the string content to structured typed objects of type `IBookingRequest`
+	 * decompose the input string to array of structured objects of the `IBookingRequestExtended` type
+	 * this function is highly dependant of the agreed input format
+	 * any modification on the input string format may affect on this function results
 	 * @param input string input to be processed
 	 * @returns booking requests objects
 	 */
@@ -53,7 +56,7 @@ export class CalendarController {
 			const submissionTime = line1[ 0 ] + ' ' + line1[ 1 ];
 			const startTimeMoment = moment( startTime, this.FORMAT );
 			const endTimeMoment = startTimeMoment.clone().add( duration, 'hours' );
-			const submissionTimeMoment = moment( submissionTime, this.FORMAT );
+			const submissionTimeMoment = moment( submissionTime, this.SUBMISSION_FORMAT );
 
 			const extendedBookingRequest: IBookingRequestExtended = {
 				id: uuid(),
@@ -74,13 +77,9 @@ export class CalendarController {
 	}
 
 	private static isOutsideOfficeHours = ( officeHours: string[], value: IBookingRequestExtended ): boolean => {
-		if ( officeHours.length !== 2 ) throw new Error( 'invalid office hours format' );
 		const numericOfficeHours = officeHours.map( v => Number( v ) );
-
-
 		const startTimeValue = Number( value.startTimeMoment.format( 'HHmm' ) );
 		const endTimeValue = Number( value.endTimeMoment.format( 'HHmm' ) );
-
 		if (
 			startTimeValue < numericOfficeHours[ 0 ]
 			|| startTimeValue > numericOfficeHours[ 1 ]
@@ -119,13 +118,14 @@ export class CalendarController {
 	}
 
 	private static removeOverlaps = ( input: IBookingRequestExtended[] ): IBookingRequestExtended[] => {
-		// sort asc by submission time
-		const res = input.sort( ( a, b ) => a.submissionTimeMoment.isAfter( b.submissionTimeMoment ) ? 1 : -1 );
 		const itemsToRemove = new Set<string>();
+		const res = this.sortBySubmissionTime( input );
+
+		// foreach request, check all other requests
+		// if they are not marked to be deleted yet and overlapped
+		// mark the later one to be removed (set it in the Set itemsToRemove)
 
 		for ( let i = 1; i < res.length; i++ ) {
-			if ( itemsToRemove.has( res[ i ].id ) ) continue;
-
 			for ( let j = 0; j < res.length; j++ ) {
 				if (
 					i !== j
@@ -138,6 +138,7 @@ export class CalendarController {
 			}
 		}
 
+		// only keep the items that are not marked to be removed (not exist in the Set)
 		return res.filter( item => !itemsToRemove.has( item.id ) );
 	}
 
@@ -195,15 +196,13 @@ export class CalendarController {
 
 	public static handle = ( input: string ): any => {
 		input = ( input ?? '' ).trim();
+
 		const officeHours: string[] = this.getOfficeHours( input );
 
 		let requests: IBookingRequestExtended[] = [];
-
 		requests = this.decompose( input );
 		requests = this.removeIfOutsideOfficeHours( requests, officeHours );
-		requests = this.sortBySubmissionTime( requests );
 		requests = this.removeOverlaps( requests );
-
 
 		const groupedByDay: IBookingByDay = this.groupByDay( requests );
 		const result: string = this.formatOutput( groupedByDay );
